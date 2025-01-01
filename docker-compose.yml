@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  rustapp:
+    container_name: app
+    image: app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROFILE: dev
+    ports:
+      - '3000:3000'
+    networks:
+        - backend_ngek
+    volumes:
+      - ./settings:/app/settings
+
+
+
+  db:
+    container_name: db
+    image: postgres:12
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Bxk180621
+      POSTGRES_DB: backend_ngek
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend_ngek
+volumes:
+  pgdata: {}
+
+networks:
+    backend_ngek:
+        driver: bridge

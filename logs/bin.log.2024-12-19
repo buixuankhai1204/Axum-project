@@ -1,0 +1,5 @@
+{"v":0,"name":"bin","msg":"The initialization of Tracing was successful!","level":30,"hostname":"xuankhai","pid":29079,"time":"2024-12-19T06:46:34.213215507Z","target":"app","line":13,"file":"src/bin/main.rs"}
+{"v":0,"name":"bin","msg":"Successfully read config profile: dev.","level":30,"hostname":"xuankhai","pid":29079,"time":"2024-12-19T06:46:34.214472041Z","target":"erp_backend::core::configure","line":32,"file":"src/core/configure/mod.rs"}
+{"v":0,"name":"bin","msg":"Reading the config file was successful!","level":30,"hostname":"xuankhai","pid":29079,"time":"2024-12-19T06:46:34.214603264Z","target":"app","line":15,"file":"src/bin/main.rs"}
+{"v":0,"name":"bin","msg":"Create a new server!","level":30,"hostname":"xuankhai","pid":29079,"time":"2024-12-19T06:46:34.214670069Z","target":"app","line":16,"file":"src/bin/main.rs"}
+{"v":0,"name":"bin","msg":"The server is listening on: 127.0.0.1:3000","level":30,"hostname":"xuankhai","pid":29079,"time":"2024-12-19T06:46:34.214808432Z","target":"app::http","line":34,"file":"src/bin/http/mod.rs"}
