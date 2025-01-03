@@ -23,7 +23,3 @@ Backend Repo
 #### Running locally
 
 - Run: `./run`
-
-## Contributing
-
-VTVMS developer team.
