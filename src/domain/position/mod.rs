@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use sea_orm::{ActiveModelBehavior, DeriveEntityModel};
 use serde::{Deserialize, Serialize};
-use crate::domain::entity::{Department, Employee};
+use crate::domain::entity::{DepartmentEntity, EmployeeEntity, PositionEntity};
 
 pub mod request;
 pub mod response;
@@ -24,6 +24,8 @@ pub struct Model {
     pub name: String,
     #[sea_orm(nulable)]
     pub description: String,
+    #[sea_orm(nullable, default_value = true)]
+    pub is_active: Option<bool>,
     #[sea_orm()]
     pub create_at: DateTime<Utc>,
     #[sea_orm()]
@@ -44,13 +46,13 @@ pub enum Relation {
 }
 
 // `Related` trait has to be implemented by hand
-impl Related<Department> for Entity {
+impl Related<DepartmentEntity> for PositionEntity {
     fn to() -> RelationDef {
         Relation::Department.def()
     }
 }
 
-impl Related<Employee> for Entity {
+impl Related<EmployeeEntity> for PositionEntity {
     fn to() -> RelationDef {
         employee_position::Relation::Position.def()
     }

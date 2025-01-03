@@ -1,7 +1,8 @@
 use crate::core::error::{AppError, AppResult};
-use crate::domain::entity::User;
-use crate::domain::user::Entity;
-use crate::domain::{organization, user};
+use crate::domain::entity::UserEntity;
+use crate::domain::model::UserModel;
+use crate::domain::user;
+use crate::domain::user::ActiveModel;
 use crate::infrastructure::persistence::repo_interface::{
     DeleteRepository, ReadRepository, WriteRepository,
 };
@@ -10,156 +11,100 @@ use crate::util::filter_and_pagination::{sort_and_paginate, EModule, PageQueryPa
 use async_trait::async_trait;
 use chrono::Utc;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DatabaseTransaction, DbErr,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DatabaseTransaction,
     EntityTrait, IntoActiveModel, QueryFilter, Set,
 };
+use std::cell::RefCell;
+use std::fmt::Debug;
+use std::mem;
+use std::ops::Deref;
+use std::rc::Rc;
+use tera::ast::Set;
+use uuid::Uuid;
 
-#[tracing::instrument]
-pub async fn repo_save_user(
-    tx: &DatabaseTransaction,
-    username: String,
-    password: String,
-    email: String,
-) -> AppResult<user::Model> {
-    let hash_password = util::password::hash(password).await?;
-    let user = user::ActiveModel {
-        username: Set(username),
-        password: Set(hash_password),
-        email: Set(email),
-        create_at: Set(Utc::now().naive_utc()),
-        update_at: Set(Utc::now().naive_utc()),
-        ..Default::default()
+#[async_trait]
+impl ReadRepository<UserEntity> for UserEntity {
+    async fn find_data_by_id<DB>(conn: &DB, id: i64) -> Option<UserModel>
+    where
+        DB: ConnectionTrait + Debug,
+    {
+        match UserEntity::find_by_id(id).one(conn).await {
+            Ok(result) => Some(result?),
+            Err(err) => {
+                tracing::error!("Something happen when query database: {err:#?}");
+                None
+            },
+        }
     }
-    .insert(tx)
-    .await?;
-    Ok(user)
-}
 
-#[tracing::instrument(skip_all)]
-pub async fn repo_find_by_id<DB>(db: &DB, id: i64) -> AppResult<Option<user::Model>>
-where
-    DB: ConnectionTrait,
-{
-    let model = user::Entity::find_by_id(id).one(db).await?;
-    Ok(model)
-}
-
-#[tracing::instrument(skip_all)]
-pub async fn repo_find_list(
-    db: &DatabaseConnection,
-    param: PageQueryParam,
-    module_name: EModule,
-) -> AppResult<Vec<user::Model>> {
-    let mut select = user::Entity::find();
-    let results = sort_and_paginate(db, &mut select, param, module_name).await;
-    match results {
-        Ok(value) => Ok(value),
-        Err(error) => Err(error),
+    async fn find_data_by_uuid<DB>(conn: &DB, uuid: &uuid::Uuid) -> Option<UserModel>
+    where
+        DB: ConnectionTrait + Debug,
+    {
+        match UserEntity::find().filter(user::Column::UserUuid.eq(*uuid)).one(conn).await {
+            Ok(result) => Some(result?),
+            Err(err) => {
+                tracing::error!("Something happen when query database: {err:#?}");
+                None
+            },
+        }
     }
-}
 
-#[tracing::instrument(skip_all)]
-pub async fn repo_find_by_email_and_status(
-    db: &DatabaseConnection,
-    email: &str,
-    is_active: bool,
-) -> AppResult<Option<user::Model>> {
-    let query = user::Column::Email.eq(email).and(user::Column::IsActive.eq(is_active));
-    let user = user::Entity::find().filter(query).one(db).await?;
-    Ok(user)
-}
-
-#[tracing::instrument]
-pub async fn repo_check_unique_by_email(tx: &DatabaseTransaction, email: &str) -> AppResult<()> {
-    let result = user::Entity::find().filter(user::Column::Email.eq(email)).one(tx).await?;
-    if result.is_some() {
-        Err(AppError::EntityExistsError { entity: email.to_string() })
-    } else {
-        Ok(())
+    async fn find_all<DB>(conn: &DB) -> Option<Vec<UserModel>>
+    where
+        DB: ConnectionTrait + Debug,
+    {
+        match UserEntity::find().all(conn).await {
+            Ok(results) => Some(results),
+            Err(err) => {
+                tracing::error!("Something happen when query database: {err:#?}");
+                None
+            },
+        }
     }
-}
 
-#[tracing::instrument]
-pub async fn repo_check_unique_by_username(tx: &DatabaseTransaction, username: &str) -> AppResult {
-    let result = user::Entity::find().filter(user::Column::Username.eq(username)).one(tx).await?;
-    if result.is_some() {
-        Err(AppError::EntityExistsError { entity: username.to_string() })
-    } else {
-        Ok(())
+    async fn find_data_by_name<DB>(_conn: &DB, _name: &str) -> Option<UserModel>
+    where
+        DB: ConnectionTrait + Debug,
+    {
+        todo!()
     }
 }
 
 #[async_trait]
-impl ReadRepository<Entity> for Entity {
-    async fn find_data_by_id(conn: &DatabaseTransaction, id: i64) -> Option<user::Model> {
-        let user = Entity::find_by_id(id).one(conn).await;
-        if user.is_err() {
-            tracing::error!("Something happen when query database: {:#?}.", user.unwrap_err());
-            return None;
-        };
-        user.unwrap_or_default()
+impl<'a> WriteRepository<UserEntity> for UserEntity {
+    async fn create(conn: &DatabaseTransaction, model: &UserModel) -> Option<i64> {
+        match UserEntity::insert(model.clone().into_active_model()).exec(conn).await {
+            Ok(result) => Some(result.last_insert_id),
+            Err(err) => {
+                tracing::error!("Something happen when query database: {err:#?}");
+                None
+            },
+        }
     }
 
-    async fn find_data_by_uuid(
-        conn: &DatabaseTransaction,
-        uuid: &uuid::Uuid,
-    ) -> Option<user::Model> {
-        let user = Entity::find().filter(user::Column::UserUuid.eq(*uuid)).one(conn).await;
-        if user.is_err() {
-            tracing::error!("Something happen when query database: {:#?}.", user.unwrap_err());
-            return None;
-        };
-        user.unwrap_or_default()
-    }
-
-    async fn find_all(conn: &DatabaseTransaction) -> Option<Vec<user::Model>> {
-        let users = Entity::find().all(conn).await;
-        if users.is_err() {
-            tracing::error!("Something happen when query database: {:#?}.", users.unwrap_err());
-            return None;
-        };
-        Some(users.unwrap_or_default())
-    }
-
-    async fn find_data_by_name(conn: &DatabaseTransaction, name: &str) -> Option<user::Model> {
-        let user = Entity::find().filter(user::Column::Username.eq(name)).one(conn).await;
-        if user.is_err() {
-            tracing::error!("Something happen when query database: {:#?}.", user.unwrap_err());
-            return None;
-        };
-        user.unwrap_or_default()
+    async fn update(conn: &DatabaseTransaction, model: UserModel) -> Option<i64> {
+        match model.into_active_model().save(conn).await {
+            Ok(result) => Some(result.id.unwrap()),
+            Err(err) => {
+                tracing::error!("Something happen when query database: {err:#?}");
+                None
+            },
+        }
     }
 }
 
 #[async_trait]
-impl WriteRepository<User> for User {
-    async fn create(conn: &DatabaseTransaction, model: user::Model) -> Option<i64> {
-        let user = User::insert(model.into_active_model()).exec(conn).await;
+impl DeleteRepository<UserEntity> for UserEntity {
+    async fn delete_data(conn: &DatabaseTransaction, uuid: Uuid) -> Option<i64> {
+        let user = UserEntity::find().filter(user::Column::UserUuid.eq(uuid)).one(conn).await;
         if user.is_err() {
-            tracing::error!("Something happen when query database: {:#?}.", user.unwrap_err());
             return None;
-        };
-        Some(user.unwrap().last_insert_id)
-    }
+        }
+        let mut user = user.unwrap().unwrap();
 
-    async fn update(conn: &DatabaseTransaction, model: user::Model) -> Option<i64> {
-        let user_update = model.into_active_model().save(conn).await;
-        if user_update.is_err() {
-            tracing::error!(
-                "Something happen when query database: {:#?}.",
-                user_update.unwrap_err()
-            );
-            return None;
-        };
-
-        Some(user_update.unwrap().id.unwrap())
-    }
-}
-
-#[async_trait]
-impl DeleteRepository<User> for User {
-    async fn delete(conn: &DatabaseTransaction, id: i64) -> Option<u64> {
-        let user_delete = User::delete_by_id(id).exec(conn).await;
+        user.status = 0;
+        let user_delete = user.into_active_model().save(conn).await;
         if user_delete.is_err() {
             tracing::error!(
                 "Something happen when query database: {:#?}.",
@@ -168,21 +113,72 @@ impl DeleteRepository<User> for User {
             return None;
         }
 
-        Some(user_delete.unwrap().rows_affected)
+        Some(user_delete.unwrap().id.unwrap())
     }
 }
 
-impl User {
+impl UserEntity {
     #[tracing::instrument]
-    pub async fn repo_check_unique_by_email(
-        tx: &DatabaseTransaction,
+    pub async fn repo_find_by_email_and_status<DB>(
+        conn: &DB,
         email: &str,
-    ) -> AppResult<()> {
-        let result = user::Entity::find().filter(user::Column::Email.eq(email)).one(tx).await?;
-        if result.is_some() {
-            Err(AppError::EntityExistsError { entity: email.to_string() })
-        } else {
-            Ok(())
+        status: &i16,
+    ) -> Option<UserModel>
+    where
+        DB: ConnectionTrait + Debug,
+    {
+        match UserEntity::find()
+            .filter(user::Column::Email.eq(email).and(user::Column::Status.eq(*status)))
+            .one(conn)
+            .await
+        {
+            Ok(result) => Some(result?),
+            Err(err) => {
+                tracing::error!("Something happen when query database: {err:#?}");
+                None
+            },
+        }
+    }
+
+    #[tracing::instrument]
+    pub async fn repo_check_is_exists_by_email<DB>(conn: &DB, email: &str) -> Option<bool>
+    where
+        DB: ConnectionTrait + Debug,
+    {
+        match UserEntity::find().filter(user::Column::Email.eq(email)).one(conn).await {
+            Ok(result) => {
+                if result.is_none() {
+                    return Some(false);
+                }
+                Some(true)
+            },
+            Err(err) => {
+                tracing::error!("Something happen when query database: {err:#?}");
+                None
+            },
+        }
+    }
+
+    #[tracing::instrument]
+    pub async fn repo_check_is_exists_by_phone_number<DB>(
+        conn: &DB,
+        phone_number: &str,
+    ) -> Option<bool>
+    where
+        DB: ConnectionTrait + Debug,
+    {
+        match UserEntity::find().filter(user::Column::PhoneNumber.eq(phone_number)).one(conn).await
+        {
+            Ok(result) => {
+                if result.is_none() {
+                    return Some(false);
+                }
+                Some(true)
+            },
+            Err(err) => {
+                tracing::error!("Something happen when query database: {err:#?}");
+                None
+            },
         }
     }
 }

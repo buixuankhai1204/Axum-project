@@ -1,13 +1,15 @@
-use crate::domain::entity::Organization;
+use crate::domain::entity::OrganizationEntity;
 use crate::domain::organization;
 use crate::infrastructure::persistence::repo_interface::ReadRepository;
-use sea_orm::{ColumnTrait, DatabaseTransaction, DbErr, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait, QueryFilter};
 use uuid::Uuid;
+use crate::domain::model::OrganizationModel;
 
 #[async_trait::async_trait]
-impl ReadRepository<Organization> for Organization {
-    async fn find_data_by_id(conn: &DatabaseTransaction, id: i64) -> Option<organization::Model> {
-        let organization = Organization::find_by_id::<i64>(id.into()).one(conn).await;
+impl ReadRepository<OrganizationEntity> for OrganizationEntity {
+    async fn find_data_by_id<DB>(conn: &DB, id: i64) -> Option<OrganizationModel>
+    where DB: ConnectionTrait{
+        let organization = OrganizationEntity::find_by_id::<i64>(id.into()).one(conn).await;
         if organization.is_err() {
             tracing::error!(
                 "Something happen when query database: {:#?}.",
@@ -18,11 +20,12 @@ impl ReadRepository<Organization> for Organization {
         organization.unwrap_or_default()
     }
 
-    async fn find_data_by_uuid(
-        conn: &DatabaseTransaction,
+    async fn find_data_by_uuid<DB>(
+        conn: &DB,
         uuid: &Uuid,
-    ) -> Option<organization::Model> {
-        let organization = Organization::find()
+    ) -> Option<OrganizationModel>
+    where DB: ConnectionTrait {
+        let organization = OrganizationEntity::find()
             .filter(organization::Column::OrganizationUuid.eq(*uuid))
             .one(conn)
             .await;
@@ -36,14 +39,16 @@ impl ReadRepository<Organization> for Organization {
         organization.unwrap_or_default()
     }
 
-    async fn find_all(conn: &DatabaseTransaction) -> Option<Vec<organization::Model>> {
+    async fn find_all<DB>(conn: &DB) -> Option<Vec<OrganizationModel>>
+    where DB: ConnectionTrait {
         todo!()
     }
 
-    async fn find_data_by_name(
-        conn: &DatabaseTransaction,
+    async fn find_data_by_name<DB>(
+        conn: &DB,
         name: &str,
-    ) -> Option<organization::Model> {
+    ) -> Option<OrganizationModel>
+    where DB: ConnectionTrait {
         todo!()
     }
 }

@@ -1,4 +1,5 @@
-use self::{db::DatabaseConfig, server::ServerConfig};
+use self::{db::DatabaseConfig, secret::SecretConfig, server::ServerConfig};
+use crate::core::configure::redis::RedisConfig;
 use crate::util::dir::get_project_root;
 use config::{ConfigError, Environment};
 use serde::{Deserialize, Serialize};
@@ -6,6 +7,8 @@ use std::str::FromStr;
 
 pub mod db;
 pub mod env;
+pub mod redis;
+pub mod secret;
 pub mod sentry;
 pub mod server;
 pub mod trace;
@@ -16,6 +19,8 @@ pub struct AppConfig {
     pub server: ServerConfig,
     pub db: DatabaseConfig,
     pub sentry: Sentry,
+    pub redis: RedisConfig,
+    pub secret: SecretConfig,
 }
 
 impl AppConfig {

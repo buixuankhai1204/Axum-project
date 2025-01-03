@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use sea_orm::{ActiveModelBehavior, DeriveEntityModel};
 use serde::{Deserialize, Serialize};
-use crate::domain::entity::{Employee, Organization, Position};
+use crate::domain::entity::{DepartmentEntity, EmployeeEntity, OrganizationEntity, PositionEntity};
 
 pub mod request;
 pub mod response;
@@ -20,13 +20,15 @@ pub struct Model {
     pub department_uuid: i64,
     #[sea_orm()]
     pub organization_id: i64,
-    #[sea_orm(primary_key)]
+    #[sea_orm()]
+    pub name: i64,
+    #[sea_orm()]
     pub image_url: String,
-    #[sea_orm(primary_key)]
-    pub is_active: bool,
-    #[sea_orm(primary_key)]
+    #[sea_orm(nullable, default_value = true)]
+    pub is_active: Option<bool>,
+    #[sea_orm()]
     pub create_at: DateTime<Utc>,
-    #[sea_orm(primary_key)]
+    #[sea_orm()]
     pub update_at: DateTime<Utc>,
 }
 
@@ -47,19 +49,19 @@ pub enum Relation {
     Position,
 }
 
-impl Related<Organization> for Entity {
+impl Related<OrganizationEntity> for DepartmentEntity {
     fn to() -> RelationDef {
         Relation::Organization.def()
     }
 }
 
-impl Related<Position> for Entity {
+impl Related<PositionEntity> for DepartmentEntity {
     fn to() -> RelationDef {
         Relation::Position.def()
     }
 }
 
-impl Related<Employee> for Entity {
+impl Related<EmployeeEntity> for DepartmentEntity {
     fn to() -> RelationDef {
         employee_department::Relation::Employee.def()
     }

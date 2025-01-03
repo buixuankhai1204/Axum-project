@@ -1,7 +1,7 @@
 use sea_orm::EntityTrait;
 use sea_orm::PrimaryKeyTrait;
 use sea_orm::DerivePrimaryKey;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use sea_orm::{ActiveModelBehavior, DeriveEntityModel, DeriveRelation, EnumIter};
 use serde::{Deserialize, Serialize};
 
@@ -14,8 +14,8 @@ pub struct Model {
     pub employee_id: i64,
     #[sea_orm(primary_key)]
     pub position_id: i64,
-    pub create_at: DateTime<Utc>,
-    pub update_at: DateTime<Utc>,
+    pub create_at: NaiveDateTime,
+    pub update_at: NaiveDateTime,
 }
 #[async_trait::async_trait]
 impl ActiveModelBehavior for ActiveModel {}

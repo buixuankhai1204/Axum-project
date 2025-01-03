@@ -20,12 +20,12 @@ axum-extra = { version = "0.9.6", features = ["query", "typed-header"] }
 base64 = "0.22.1"
 chrono = { version = "0.4.39", features = ["clock", "serde"] }
 config = "0.15.0"
-garde = { version = "0.20.0", features = ["full"] }
+validator = { version = "0.19", features = ["derive"] }
 jsonwebtoken = "9.3.0"
 lettre = { version = "0.11.11", features = ["tokio1-native-tls", "builder"] }
 log = "0.4.22"
 log-derive = "0.4.1"
-redis = { version = "0.27.6", features = ["tokio-comp"] }
+redis = { version = "0.27.6", features = ["tokio-comp", "r2d2"] }
 regex = "1.11.1"
 reqwest = { version = "0.12.9", features = ["json", "multipart", "stream"] }
 sea-orm = { version = "1.1.2", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
@@ -53,3 +53,4 @@ tower = { version = "0.5.2", features = ["full"] }
 rand = "0.8.5"
 rand_core = { version = "0.6.4", features = ["std"] }
 sentry = "0.35.0"
+time = "0.3.37"

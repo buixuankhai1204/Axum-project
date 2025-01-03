@@ -21,7 +21,8 @@ impl DatabaseClientExt for DatabaseClient {
             .idle_timeout(Duration::from_secs(8))
             .max_lifetime(Duration::from_secs(8))
             .sqlx_logging(true)
-            .sqlx_logging_level(log::LevelFilter::Info);
+            .sqlx_logging_level(log::LevelFilter::Debug);
+
         let db = Database::connect(opt).await?;
         Ok(db)
     }

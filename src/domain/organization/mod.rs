@@ -1,9 +1,8 @@
-use crate::domain::user::ERoleUser;
+use crate::domain::entity::{DepartmentEntity, OrganizationEntity};
 use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use sea_orm::{ActiveModelBehavior, DeriveEntityModel};
 use serde::{Deserialize, Serialize};
-use crate::domain::entity::Department;
 
 pub mod request;
 pub mod response;
@@ -33,14 +32,12 @@ impl ActiveModelBehavior for ActiveModel {}
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        has_many = "super::department::Entity",
-    )]
+    #[sea_orm(has_many = "super::department::Entity")]
     Department,
 }
 
 // `Related` trait has to be implemented by hand
-impl Related<Department> for Entity {
+impl Related<DepartmentEntity> for OrganizationEntity {
     fn to() -> RelationDef {
         Relation::Department.def()
     }

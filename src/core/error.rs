@@ -9,12 +9,12 @@ pub type AppResult<T = ()> = Result<T, AppError>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
-    #[error("Entity not found")]
-    EntityNotFoundError { entity: String },
-    #[error("Entity not available")]
-    EntityNotAvailableError { entity: String },
-    #[error("Entity already exists")]
-    EntityExistsError { entity: String },
+    #[error("Entity not found!")]
+    EntityNotFoundError { detail: String },
+    #[error("Entity not available!")]
+    EntityNotAvailableError { detail: String },
+    #[error("Entity already exists!")]
+    EntityExistsError { detail: String },
     #[error("{0}")]
     PermissionDeniedError(String),
     #[error("{0}")]
@@ -31,8 +31,6 @@ pub enum AppError {
     InvalidPayloadError(String),
     #[error("{0}")]
     HashError(String),
-    #[error(transparent)]
-    InvalidInputError(#[from] garde::Report),
     #[error(transparent)]
     DatabaseError(#[from] sea_orm::error::DbErr),
     #[error(transparent)]
@@ -94,23 +92,25 @@ impl AppError {
     pub fn status_and_error(&self) -> (StatusCode, ClientResponseError) {
         use AppError::*;
         match self {
-            InvalidPayloadError(err) => {
-                (StatusCode::BAD_REQUEST, ClientResponseError::BadRequest { msg: err.to_string() })
-            },
-            BadRequestError(err) => {
-                (StatusCode::BAD_REQUEST, ClientResponseError::BadRequest { msg: err.to_string() })
-            },
-            EntityNotFoundError { entity } => (
-                StatusCode::NOT_FOUND,
-                ClientResponseError::EntityNotFound { entity: entity.to_string() },
+            InvalidPayloadError(err) => (
+                StatusCode::BAD_REQUEST,
+                ClientResponseError::BadRequest { detail: err.to_string() },
             ),
-            EntityNotAvailableError { entity } => (
-                StatusCode::NOT_FOUND,
-                ClientResponseError::EntityNotAvailable { entity: entity.to_string() },
+            BadRequestError(err) => (
+                StatusCode::BAD_REQUEST,
+                ClientResponseError::BadRequest { detail: err.to_string() },
             ),
-            EntityExistsError { entity } => (
+            EntityNotFoundError { detail } => (
+                StatusCode::NOT_FOUND,
+                ClientResponseError::EntityNotFound { detail: detail.to_string() },
+            ),
+            EntityNotAvailableError { detail } => (
+                StatusCode::NOT_FOUND,
+                ClientResponseError::EntityNotAvailable { detail: detail.to_string() },
+            ),
+            EntityExistsError { detail } => (
                 StatusCode::CONFLICT,
-                ClientResponseError::EntityAlreadyExists { entity: entity.to_string() },
+                ClientResponseError::EntityAlreadyExists { detail: detail.to_string() },
             ),
             AxumError(_err) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, ClientResponseError::InternalServerError)
@@ -139,9 +139,10 @@ impl AppError {
             PermissionDeniedError(_err) => {
                 (StatusCode::FORBIDDEN, ClientResponseError::PermissionDenied)
             },
-            InvalidSessionError(err) => {
-                (StatusCode::BAD_REQUEST, ClientResponseError::BadRequest { msg: err.to_string() })
-            },
+            InvalidSessionError(err) => (
+                StatusCode::BAD_REQUEST,
+                ClientResponseError::BadRequest { detail: err.to_string() },
+            ),
             ConflictError(_err) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, ClientResponseError::InternalServerError)
             },
@@ -176,9 +177,6 @@ impl AppError {
             Base64Error(_err) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, ClientResponseError::InternalServerError)
             },
-            InvalidInputError(err) => {
-                (StatusCode::BAD_REQUEST, ClientResponseError::BadRequest { msg: err.to_string() })
-            },
             DatabaseError(_err) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, ClientResponseError::InternalServerError)
             },
@@ -194,10 +192,4 @@ impl AppError {
             _ => (StatusCode::INTERNAL_SERVER_ERROR, ClientResponseError::InternalServerError),
         }
     }
-}
-
-pub fn invalid_input_error(field: &'static str, message: &'static str) -> AppError {
-    let mut report = garde::Report::new();
-    report.append(garde::Path::new(field), garde::Error::new(message));
-    AppError::InvalidInputError(report)
 }

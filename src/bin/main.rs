@@ -13,7 +13,7 @@ async fn main() -> AppResult<()> {
     let config = CONFIG.clone();
     tracing::info!("Reading the config file was successful!");
     tracing::info!("Create a new server!");
-    let _sentry_guard = configure::sentry::init(&config);
+    // let _sentry_guard = configure::sentry::init(&config);
     let server = AppServer::new(config).await?;
     tracing::info!("Run the server!");
     server.run().await?;

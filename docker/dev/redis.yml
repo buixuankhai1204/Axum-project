@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  cache-dev:
+    container_name: redis_client-dev
+    image: redis:7.4.1-alpine
+    # restart: always
+    ports:
+      - "6379:6379"
+    command: redis_client-server --save 20 1 --loglevel warning --requirepass 123123
+    volumes:
+      - cache-dev:/data
+
+volumes:
+  cache-dev:
+    driver: local

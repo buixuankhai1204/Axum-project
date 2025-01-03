@@ -1,42 +1,44 @@
+use crate::domain::entity::{EmployeeEntity, UserEntity};
 use chrono::NaiveDateTime;
 use sea_orm::entity::prelude::*;
 use sea_orm::{ActiveModelBehavior, DeriveActiveEnum, DeriveEntityModel, EnumIter};
 use serde::{Deserialize, Serialize};
-use crate::domain::entity::Employee;
 
 pub mod request;
 pub mod response;
 pub mod services;
 
 #[derive(
-    Debug, PartialEq, Eq, PartialOrd, Ord, Clone, DeriveEntityModel, Deserialize, Serialize,
+    Debug, PartialEq, Eq, PartialOrd, Ord, Clone, DeriveEntityModel, Deserialize, Serialize,Default
 )]
 #[sea_orm(table_name = "users")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
+    #[sea_orm(unique, indexed)]
     pub user_uuid: Uuid,
-    pub fullname: String,
-    #[sea_orm(unique)]
-    pub username: String,
-    #[sea_orm(unique, nullable, indexed)]
-    pub password: String,
-    #[sea_orm(unique, nullable, indexed)]
+    #[sea_orm()]
+    pub role_id: i64,
+    #[sea_orm()]
+    pub creator_id: i64,
+    #[sea_orm(unique, indexed)]
     pub email: String,
-    #[sea_orm(default_value = "Member")]
-    pub role: ERoleUser,
-    #[sea_orm(nullable, default_value = "Male")]
-    pub gender: EGender,
-    #[sea_orm(nullable)]
-    pub address: String,
-    #[sea_orm(nullable, default_value = true)]
-    pub is_active: Option<bool>,
-    #[sea_orm(nullable, default_value = false)]
-    pub is_two_fa: Option<bool>,
-    #[sea_orm(nullable)]
-    pub create_at: NaiveDateTime,
-    #[sea_orm(nullable)]
-    pub update_at: NaiveDateTime,
+    pub password: String,
+    pub full_name: String,
+    #[sea_orm(default_value = "Other")]
+    pub gender: Option<EGenderUser>,
+    #[sea_orm(unique, indexed)]
+    pub phone_number: Option<String>,
+    pub address: Option<String>,
+    pub picture: Option<String>,
+    #[sea_orm(default_value = "vi")]
+    pub language: Option<String>,
+    #[sea_orm(default_value = 1)]
+    pub status: i16,
+    pub last_login: Option<NaiveDateTime>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+    pub deleted_at: Option<NaiveDateTime>,
 }
 
 #[derive(
@@ -55,40 +57,17 @@ pub struct Model {
     strum::Display,
     Hash,
     DeriveActiveEnum,
+    Default,
 )]
-#[sea_orm(rs_type = "String", db_type = "Text", enum_name = "ROLE_USER")]
-pub enum ERoleUser {
-    #[sea_orm(string_value = "Admin")]
-    Admin,
-    #[sea_orm(string_value = "Member")]
-    Member,
-    #[sea_orm(string_value = "User")]
-    User,
-}
-
-#[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    strum::EnumString,
-    PartialOrd,
-    Ord,
-    Deserialize,
-    Serialize,
-    utoipa::ToSchema,
-    Clone,
-    Copy,
-    EnumIter,
-    strum::Display,
-    Hash,
-    DeriveActiveEnum,
-)]
-#[sea_orm(rs_type = "String", db_type = "Text", enum_name = "E_GENDER")]
-pub enum EGender {
+#[sea_orm(rs_type = "String", db_type = "Text", enum_name = "GENDER_OF_USER")]
+pub enum EGenderUser {
     #[sea_orm(string_value = "Male")]
     Male,
     #[sea_orm(string_value = "Female")]
     Female,
+    #[sea_orm(string_value = "Other")]
+    #[default]
+    Other,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -98,7 +77,7 @@ pub enum Relation {
 }
 
 // `Related` trait has to be implemented by hand
-impl Related<Employee> for Entity {
+impl Related<EmployeeEntity> for UserEntity {
     fn to() -> RelationDef {
         Relation::Employee.def()
     }

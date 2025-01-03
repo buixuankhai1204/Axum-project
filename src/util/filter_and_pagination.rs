@@ -41,13 +41,11 @@ pub fn get_simple_expression(query_string: &str, module_name: EModule) -> Option
 
     let column: Either<user::Column, employee::Column> = match module_name {
         EModule::User => match parts[0] {
-            "username" => Either::UserColumn(user::Column::Username),
             "email" => Either::UserColumn(user::Column::Email),
             "id" => Either::UserColumn(user::Column::Id),
             _ => return None,
         },
         EModule::Employee => match parts[0] {
-            "role" => Either::EmployeeColumn(employee::Column::Role),
             "userId" => Either::EmployeeColumn(employee::Column::UserId),
             _ => return None,
         },
@@ -104,8 +102,8 @@ where
     }
 
     select_clone_object = match param.sort_direction {
-        Some(Direction::DESC) => select_clone_object.order_by_desc(user::Column::CreateAt),
-        _ => select_clone_object.order_by_asc(user::Column::CreateAt),
+        Some(Direction::DESC) => select_clone_object.order_by_desc(user::Column::CreatedAt),
+        _ => select_clone_object.order_by_asc(user::Column::CreatedAt),
     };
 
     let models: Vec<M> =

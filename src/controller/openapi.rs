@@ -1,10 +1,11 @@
-use crate::domain::employee::request::CreateNewEmployeeByUserUuidRequest;
-use crate::core::response::{ClientResponseError, MessageResponse, ServiceStatusResponse};
-use crate::domain::user::request::{RegisterRequest, UpdateProfileRequest};
-use crate::domain::user::response::{
-    GetUserListResponse, GetUserResponse, ProfileResponse, RegisterResponse,
+use crate::core::response::{
+    ClientResponseError, EntityResponse, MessageResponse, ServiceStatusResponse,
 };
-use crate::util::filter_and_pagination::Direction;
+use crate::domain::authenticate::request::{LoginByEmailRequest, RefreshTokenRequest};
+use crate::domain::authenticate::response::{LoginResponse, TokenResponse};
+use crate::domain::user::request::{AdminCreateAccountRequest, UpdateProfileRequest};
+use crate::domain::user::response::PublicProfileResponse;
+use crate::util::filter_and_pagination::{Direction, PageQueryParam};
 use utoipa::{
     openapi::security::{Http, HttpAuthScheme, SecurityScheme},
     Modify,
@@ -17,33 +18,42 @@ use utoipa::{
         title = "UPTOP ERP API",
     ),
     paths(
-        crate::controller::server::handler::health_check,
-        crate::controller::server::handler::server_state,
-        crate::controller::user::handler::register_by_email,
-        crate::controller::user::handler::get_profile,
-        crate::controller::user::handler::get_list,
-        crate::controller::user::handler::update_profile,
-        crate::controller::employee::handler::create_new_employee_by_user_exist,
+        // server api
+        crate::controller::server::health_check,
+        crate::controller::server::server_state,
+        // auth api
+        crate::controller::auth::controller_login_by_email,
+        crate::controller::auth::controller_refresh_token,
+        // user api
+        crate::controller::admin::user::controller_admin_create_account,
+        crate::controller::admin::user::controller_admin_get_list,
+        crate::controller::user::controller_get_profile,
+        crate::controller::user::controller_update_profile,
+        crate::controller::user::controller_logout,
     ),
     components(
         schemas(
-            RegisterRequest,
-            RegisterResponse,
-            ClientResponseError,
-            MessageResponse,
-            ProfileResponse,
+            // request
+            LoginByEmailRequest,
+            RefreshTokenRequest,
+            AdminCreateAccountRequest,
             UpdateProfileRequest,
-            ServiceStatusResponse,
-            GetUserResponse,
-            GetUserListResponse,
             Direction,
-            CreateNewEmployeeByUserUuidRequest
+            PageQueryParam,
+            // response
+            LoginResponse,
+            TokenResponse,
+            MessageResponse,
+            EntityResponse<Vec<PublicProfileResponse>>,
+            PublicProfileResponse,
+            ServiceStatusResponse,
+            ClientResponseError,
         )
     ),
     tags(
         (name = "server_service", description = "server endpoints."),
+        (name = "auth_service", description = "authenticate endpoints."),
         (name = "user_service", description = "user endpoints."),
-        (name = "employee_service", description = "employee endpoints."),
     ),
     modifiers(&SecurityAddon)
 )]

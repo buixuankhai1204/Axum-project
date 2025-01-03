@@ -15,9 +15,10 @@ impl MessageResponse {
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct ServiceStatusResponse {
     pub db: bool,
+    pub redis: bool,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, ToSchema)]
 pub struct EntityResponse<T> {
     pub message: String,
     pub data: Option<T>,
@@ -25,12 +26,12 @@ pub struct EntityResponse<T> {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, ToSchema)]
-#[serde(tag = "message", content = "details")]
+#[serde(tag = "code_message", content = "message")]
 pub enum ClientResponseError {
-    EntityNotFound { entity: String },
-    EntityNotAvailable { entity: String },
-    EntityAlreadyExists { entity: String },
-    BadRequest { msg: String },
+    EntityNotFound { detail: String },
+    EntityNotAvailable { detail: String },
+    EntityAlreadyExists { detail: String },
+    BadRequest { detail: String },
     Unauthorized,
     AccountForbidden,
     PermissionDenied,

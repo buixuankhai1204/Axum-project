@@ -5,12 +5,11 @@ use axum::{
     Router,
 };
 use erp_backend::controller::openapi::ApiDoc;
-use erp_backend::controller::{employee, server, user};
+use erp_backend::controller::{build_routes, employee, server, user};
 use erp_backend::core::app_state::AppState;
 use erp_backend::core::configure::AppConfig;
 use erp_backend::core::error::AppResult;
-use erp_backend::infrastructure::middleware::authenticate::mw_authenticate;
-use erp_backend::infrastructure::middleware::map_response::{handler_404, mw_map_response};
+use erp_backend::infrastructure::middleware::map_response::handler_404;
 use erp_backend::infrastructure::persistence::postgres::migrate_database;
 use std::sync::Arc;
 use std::time::Duration;
@@ -63,16 +62,9 @@ impl AppServer {
                 header::CONTENT_TYPE, HeaderValue::from_static("application/octet-stream")
             );
 
-        // TODO: Fix bug not open swagger ui
-        let router = Router::new()
-            .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));
-        let router = server::add_routers(router);
-        let router = user::add_routers(router);
-        let router = employee::add_routers(router);
-
-        let app = router
-            .layer(middleware::map_response(mw_map_response))
-            .layer(middleware::from_fn_with_state(self.state.clone(), mw_authenticate))
+        let app = Router::new()
+            .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+            .merge(build_routes())
             .layer(CorsLayer::new())
             .layer(middleware)
             .fallback(handler_404)
