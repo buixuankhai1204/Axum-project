@@ -1,13 +1,13 @@
 profile = "dev"
 [server]
-addr = "0.0.0.0"
+addr = "127.0.0.1"
 port = 3000
 
 [db]
-host = "192.168.1.215"
+host = "127.0.0.1"
 port = 5432
 username = "postgres"
-password = "123123"
+password = "Bxk180621"
 database_name = "uptop"
 max_connections = 5
 
@@ -22,7 +22,7 @@ public_refresh_key = "static/secret_key/public_refresh_rsa_key.pem"
 
 [redis]
 username = "default"
-password = "HEeQ5Sx9OlV7SMBImXFT9yIFA7pBNkhO"
-host = "192.168.1.215"
+password = "Bxk180621"
+host = "127.0.0.1"
 port = 6379
 database_name = "0"

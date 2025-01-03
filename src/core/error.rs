@@ -101,11 +101,11 @@ impl AppError {
                 ClientResponseError::BadRequest { detail: err.to_string() },
             ),
             EntityNotFoundError { detail } => (
-                StatusCode::NOT_FOUND,
+                StatusCode::BAD_REQUEST,
                 ClientResponseError::EntityNotFound { detail: detail.to_string() },
             ),
             EntityNotAvailableError { detail } => (
-                StatusCode::NOT_FOUND,
+                StatusCode::BAD_REQUEST,
                 ClientResponseError::EntityNotAvailable { detail: detail.to_string() },
             ),
             EntityExistsError { detail } => (

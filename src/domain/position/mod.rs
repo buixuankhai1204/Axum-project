@@ -17,7 +17,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
     #[sea_orm()]
-    pub position_uuid: i64,
+    pub position_uuid: Uuid,
     #[sea_orm()]
     pub department_id: i64,
     #[sea_orm(indexd, unique)]
@@ -25,7 +25,7 @@ pub struct Model {
     #[sea_orm(nulable)]
     pub description: String,
     #[sea_orm(nullable, default_value = true)]
-    pub is_active: Option<bool>,
+    pub status: Option<i16>,
     #[sea_orm()]
     pub create_at: DateTime<Utc>,
     #[sea_orm()]

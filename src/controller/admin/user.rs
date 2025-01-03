@@ -11,7 +11,7 @@ use axum::{Extension, Json};
 use axum_extra::extract::Query;
 
 #[utoipa::path(
-    get,
+    post,
     path = "/v1/admin/create",
     request_body = AdminCreateAccountRequest,
     tags = ["user_service"],

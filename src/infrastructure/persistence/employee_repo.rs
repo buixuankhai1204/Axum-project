@@ -4,10 +4,12 @@ use crate::domain::{department, employee};
 use crate::infrastructure::persistence::repo_interface::{
     DeleteRepository, ReadRepository, WriteRepository,
 };
+use crate::util::filter_and_pagination::{sort_and_paginate, EModule, PageQueryParam};
 use async_trait::async_trait;
+use sea_orm::ActiveValue::Set;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseTransaction, EntityTrait,
-    IntoActiveModel, QueryFilter,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseBackend, DatabaseTransaction,
+    EntityTrait, IntoActiveModel, QueryFilter, QueryTrait,
 };
 use std::cell::RefCell;
 use std::fmt::Debug;
@@ -40,16 +42,21 @@ impl ReadRepository<EmployeeEntity> for EmployeeEntity {
         user.unwrap_or_default()
     }
 
-    async fn find_all<DB>(conn: &DB) -> Option<Vec<EmployeeModel>>
+    async fn find_all<DB>(conn: &DB, query_params: PageQueryParam) -> Option<Vec<EmployeeModel>>
     where
         DB: ConnectionTrait + Debug,
     {
-        let users = EmployeeEntity::find().all(conn).await;
-        if users.is_err() {
-            tracing::error!("Something happen when query database: {:#?}.", users.unwrap_err());
+        let employees = sort_and_paginate(
+            conn,
+            &mut EmployeeEntity::find(),
+            query_params,
+            EModule::Employee,
+        ).await;
+        if employees.is_err() {
+            tracing::error!("Something happen when query database: {:#?}.", employees.unwrap_err());
             return None;
         };
-        Some(users.unwrap_or_default())
+        Some(employees.unwrap_or_default())
     }
 
     async fn find_data_by_name<DB>(conn: &DB, name: &str) -> Option<EmployeeModel>
@@ -88,15 +95,19 @@ impl ReadRepository<EmployeeEntity> for EmployeeEntity {
 #[async_trait]
 impl DeleteRepository<EmployeeEntity> for EmployeeEntity {
     async fn delete_data(conn: &DatabaseTransaction, uuid: Uuid) -> Option<i64> {
-        let employee =
+        let employee_data =
             EmployeeEntity::find().filter(employee::Column::EmployeeUuid.eq(uuid)).one(conn).await;
-        if employee.is_err() {
+        if employee_data.is_err() {
             return None;
         }
-        let mut employee = employee.unwrap().unwrap();
 
-        employee.is_active = Some(false);
-        let employee_delete = employee.into_active_model().save(conn).await;
+        let mut employee = match employee_data.unwrap() {
+            Some(data) => data.into_active_model(),
+            None => return None,
+        };
+
+        employee.status = Set(Some(0));
+        let employee_delete = employee.save(conn).await;
         if employee_delete.is_err() {
             tracing::error!(
                 "Something happen when query database: {:#?}.",

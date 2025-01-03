@@ -1,9 +1,9 @@
 use crate::domain::employee::{employee_department, employee_position};
-use chrono::{DateTime, Utc};
+use crate::domain::entity::{DepartmentEntity, EmployeeEntity, OrganizationEntity, PositionEntity};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use sea_orm::entity::prelude::*;
 use sea_orm::{ActiveModelBehavior, DeriveEntityModel};
 use serde::{Deserialize, Serialize};
-use crate::domain::entity::{DepartmentEntity, EmployeeEntity, OrganizationEntity, PositionEntity};
 
 pub mod request;
 pub mod response;
@@ -17,19 +17,19 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
     #[sea_orm()]
-    pub department_uuid: i64,
+    pub department_uuid: Uuid,
     #[sea_orm()]
     pub organization_id: i64,
     #[sea_orm()]
-    pub name: i64,
+    pub name: String,
     #[sea_orm()]
     pub image_url: String,
-    #[sea_orm(nullable, default_value = true)]
-    pub is_active: Option<bool>,
+    #[sea_orm(nullable, default_value = 1)]
+    pub status: Option<i16>,
     #[sea_orm()]
-    pub create_at: DateTime<Utc>,
+    pub create_at: NaiveDateTime,
     #[sea_orm()]
-    pub update_at: DateTime<Utc>,
+    pub update_at: NaiveDateTime,
 }
 
 #[async_trait::async_trait]
@@ -43,9 +43,7 @@ pub enum Relation {
     to = "super::organization::Column::Id"
     )]
     Organization,
-    #[sea_orm(
-    has_many = "super::position::Entity"
-    )]
+    #[sea_orm(has_many = "super::position::Entity")]
     Position,
 }
 
@@ -70,4 +68,3 @@ impl Related<EmployeeEntity> for DepartmentEntity {
         Some(employee_department::Relation::Department.def().rev())
     }
 }
-

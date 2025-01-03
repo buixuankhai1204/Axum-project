@@ -4,6 +4,7 @@ use crate::infrastructure::persistence::repo_interface::ReadRepository;
 use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait, QueryFilter};
 use uuid::Uuid;
 use crate::domain::model::OrganizationModel;
+use crate::util::filter_and_pagination::PageQueryParam;
 
 #[async_trait::async_trait]
 impl ReadRepository<OrganizationEntity> for OrganizationEntity {
@@ -39,7 +40,7 @@ impl ReadRepository<OrganizationEntity> for OrganizationEntity {
         organization.unwrap_or_default()
     }
 
-    async fn find_all<DB>(conn: &DB) -> Option<Vec<OrganizationModel>>
+    async fn find_all<DB>(conn: &DB, query_params: PageQueryParam) -> Option<Vec<OrganizationModel>>
     where DB: ConnectionTrait {
         todo!()
     }

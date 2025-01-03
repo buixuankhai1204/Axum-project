@@ -119,7 +119,7 @@ pub async fn service_admin_get_list(
     param: PageQueryParam,
 ) -> AppResult<Vec<PublicProfileResponse>> {
     tracing::info!("Get user list with parameter: {param:?}");
-    match UserEntity::find_all(&*state.db).await {
+    match UserEntity::find_all(&*state.db, param).await {
         Some(result) => Ok(result.into_iter().map(PublicProfileResponse::from).collect()),
         None => Err(AppError::BadRequestError("Something went wrong!".to_string())),
     }

@@ -16,7 +16,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
     #[sea_orm()]
-    pub organization_uuid: i64,
+    pub organization_uuid: Uuid,
     #[sea_orm()]
     pub name: String,
     #[sea_orm()]

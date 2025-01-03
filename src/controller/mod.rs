@@ -26,7 +26,10 @@ pub fn build_routes() -> Router<AppState> {
         .route("/v1/logout", post(user::controller_logout));
 
     let employee_routes =
-        Router::new().route("/employee", get(employee::create_new_employee_by_user_exist));
+        Router::new().route("/v1/employee/create_by_exist_user", post(employee::create_new_employee_by_user_exist))
+            .route("/v1/employee/new", post(employee::create_new_employee))
+            .route("/v1/employee/update", put(employee::update_employee))
+            .route("/v1/employee/delete", put(employee::delete_employee));
 
     Router::new().merge(server_routes).merge(auth_routes).merge(user_routes).merge(employee_routes)
 }

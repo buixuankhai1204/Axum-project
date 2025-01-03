@@ -13,6 +13,7 @@ use sea_orm::{
 };
 use std::cell::RefCell;
 use uuid::Uuid;
+use crate::util::filter_and_pagination::{sort_and_paginate, EModule, PageQueryParam};
 
 #[async_trait]
 impl ReadRepository<PositionEntity> for PositionEntity {
@@ -40,16 +41,21 @@ impl ReadRepository<PositionEntity> for PositionEntity {
         user.unwrap_or_default()
     }
 
-    async fn find_all<DB>(conn: &DB) -> Option<Vec<PositionModel>>
+    async fn find_all<DB>(conn: &DB, query_params: PageQueryParam) -> Option<Vec<PositionModel>>
     where
         DB: ConnectionTrait,
     {
-        let users = PositionEntity::find().all(conn).await;
-        if users.is_err() {
-            tracing::error!("Something happen when query database: {:#?}.", users.unwrap_err());
+        let positions = sort_and_paginate(
+            conn,
+            &mut PositionEntity::find(),
+            query_params,
+            EModule::Position,
+        ).await;
+        if positions.is_err() {
+            tracing::error!("Something happen when query database: {:#?}.", positions.unwrap_err());
             return None;
         };
-        Some(users.unwrap_or_default())
+        Some(positions.unwrap_or_default())
     }
 
     async fn find_data_by_name<DB>(conn: &DB, name: &str) -> Option<PositionModel>
@@ -103,7 +109,7 @@ impl DeleteRepository<PositionEntity> for PositionEntity {
         }
         let mut position = position.unwrap().unwrap();
 
-        position.is_active = Some(false);
+        position.status = Some(0);
         let position_delete = position.into_active_model().save(conn).await;
         if position_delete.is_err() {
             tracing::error!(

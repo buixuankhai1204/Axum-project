@@ -1,9 +1,9 @@
 use crate::domain::user;
-use crate::infrastructure::migrations::{Migrator, MigratorTrait};
 use crate::infrastructure::persistence::postgres::{DatabaseClient, DatabaseClientExt};
 use sea_orm::{DbBackend, Schema};
 use sea_orm_migration::{prelude::*, sea_orm::TransactionTrait};
 use std::sync::Arc;
+use crate::domain::entity::EmployeePositionEntity;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -14,14 +14,13 @@ impl MigrationTrait for Migration {
         let db_postgres = DbBackend::Postgres;
         let schema = Schema::new(db_postgres);
         let db = manager.get_connection();
-
-        let statement = db_postgres.build(&schema.create_table_from_entity(user::Entity));
+        let statement = db_postgres.build(&schema.create_table_from_entity(EmployeePositionEntity));
         db.execute_unprepared(statement.sql.as_str()).await?;
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.get_connection().execute_unprepared("DROP TABLE IF EXISTS users").await?;
+        manager.get_connection().execute_unprepared("DROP TABLE IF EXISTS employee_position").await?;
         Ok(())
     }
 }

@@ -3,6 +3,10 @@ use crate::core::response::{
 };
 use crate::domain::authenticate::request::{LoginByEmailRequest, RefreshTokenRequest};
 use crate::domain::authenticate::response::{LoginResponse, TokenResponse};
+use crate::domain::employee::request::{
+    CreateNewEmployeeByUserUuidRequest, CreateNewEmployeeRequest, DeleteEmployeeRequest,
+    UpdateEmployeeRequest,
+};
 use crate::domain::user::request::{AdminCreateAccountRequest, UpdateProfileRequest};
 use crate::domain::user::response::PublicProfileResponse;
 use crate::util::filter_and_pagination::{Direction, PageQueryParam};
@@ -30,6 +34,12 @@ use utoipa::{
         crate::controller::user::controller_get_profile,
         crate::controller::user::controller_update_profile,
         crate::controller::user::controller_logout,
+
+        // employee api
+        crate::controller::employee::create_new_employee_by_user_exist,
+        crate::controller::employee::create_new_employee,
+        crate::controller::employee::update_employee,
+        crate::controller::employee::delete_employee,
     ),
     components(
         schemas(
@@ -38,8 +48,13 @@ use utoipa::{
             RefreshTokenRequest,
             AdminCreateAccountRequest,
             UpdateProfileRequest,
+            CreateNewEmployeeRequest,
+            CreateNewEmployeeByUserUuidRequest,
+            UpdateEmployeeRequest,
+            DeleteEmployeeRequest,
             Direction,
             PageQueryParam,
+
             // response
             LoginResponse,
             TokenResponse,
@@ -54,6 +69,7 @@ use utoipa::{
         (name = "server_service", description = "server endpoints."),
         (name = "auth_service", description = "authenticate endpoints."),
         (name = "user_service", description = "user endpoints."),
+        (name = "employee_service", description = "employee endpoints."),
     ),
     modifiers(&SecurityAddon)
 )]

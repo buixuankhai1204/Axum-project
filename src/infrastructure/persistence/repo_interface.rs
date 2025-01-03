@@ -3,6 +3,7 @@ use sea_orm::{ConnectionTrait, DatabaseTransaction, EntityTrait};
 use std::fmt::Debug;
 use std::rc::Rc;
 use uuid::Uuid;
+use crate::util::filter_and_pagination::PageQueryParam;
 
 #[async_trait::async_trait]
 pub trait ReadRepository<E>: Sync + Send
@@ -16,7 +17,7 @@ where
     async fn find_data_by_uuid<DB>(conn: &DB, uuid: &Uuid) -> Option<E::Model>
     where
         DB: ConnectionTrait + Debug;
-    async fn find_all<DB>(conn: &DB) -> Option<Vec<E::Model>>
+    async fn find_all<DB>(conn: &DB, query_params: PageQueryParam) -> Option<Vec<E::Model>>
     where
         DB: ConnectionTrait + Debug;
 

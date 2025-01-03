@@ -11,15 +11,7 @@ pub mod response;
 pub mod services;
 
 #[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Clone,
-    DeriveEntityModel,
-    Deserialize,
-    Serialize,
+    Debug, PartialEq, Eq, PartialOrd, Ord, Clone, DeriveEntityModel, Deserialize, Serialize, Default,
 )]
 #[sea_orm(table_name = "employees", rename_all = "snake_case")]
 pub struct Model {
@@ -28,8 +20,8 @@ pub struct Model {
     pub employee_uuid: Uuid,
     pub user_id: i64,
     pub image_url: String,
-    #[sea_orm(nullable, default_value = true)]
-    pub is_active: Option<bool>,
+    #[sea_orm(nullable, default_value = 1)]
+    pub status: Option<i16>,
     pub create_at: NaiveDateTime,
     pub update_at: NaiveDateTime,
 }

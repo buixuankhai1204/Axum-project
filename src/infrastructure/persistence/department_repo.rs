@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use crate::core::error::{AppError, AppResult};
 use crate::domain::entity::{DepartmentEntity, OrganizationEntity, PositionEntity};
 use crate::domain::model::DepartmentModel;
@@ -6,9 +5,14 @@ use crate::domain::{department, organization, position};
 use crate::infrastructure::persistence::repo_interface::{
     DeleteRepository, ReadRepository, WriteRepository,
 };
+use crate::util::filter_and_pagination::{sort_and_paginate, EModule, PageQueryParam};
 use async_trait::async_trait;
-use sea_orm::{ActiveModelTrait, ConnectionTrait, DatabaseConnection, DatabaseTransaction, EntityTrait, FromQueryResult, IntoActiveModel, QueryFilter};
+use sea_orm::{
+    ActiveModelTrait, ConnectionTrait, DatabaseConnection, DatabaseTransaction, EntityTrait,
+    FromQueryResult, IntoActiveModel, QueryFilter,
+};
 use sea_orm::{ColumnTrait, EntityOrSelect, QuerySelect};
+use std::cell::RefCell;
 use uuid::Uuid;
 
 #[async_trait]
@@ -28,10 +32,7 @@ impl ReadRepository<DepartmentEntity> for DepartmentEntity {
         department.unwrap_or_default()
     }
 
-    async fn find_data_by_uuid<DB>(
-        conn: &DB,
-        uuid: &uuid::Uuid,
-    ) -> Option<DepartmentModel>
+    async fn find_data_by_uuid<DB>(conn: &DB, uuid: &uuid::Uuid) -> Option<DepartmentModel>
     where
         DB: ConnectionTrait,
     {
@@ -49,11 +50,17 @@ impl ReadRepository<DepartmentEntity> for DepartmentEntity {
         department.unwrap_or_default()
     }
 
-    async fn find_all<DB>(conn: &DB) -> Option<Vec<DepartmentModel>>
+    async fn find_all<DB>(conn: &DB, query_params: PageQueryParam) -> Option<Vec<DepartmentModel>>
     where
         DB: ConnectionTrait,
     {
-        let departments = DepartmentEntity::find().all(conn).await;
+        let departments = sort_and_paginate(
+            conn,
+            &mut DepartmentEntity::find(),
+            query_params,
+            EModule::Department,
+        )
+        .await;
         if departments.is_err() {
             tracing::error!(
                 "Something happen when query database: {:#?}.",
@@ -120,7 +127,7 @@ impl DeleteRepository<DepartmentEntity> for DepartmentEntity {
             return None;
         }
         let mut department = department.unwrap().unwrap();
-        department.is_active = Some(false);
+        department.status = Some(0);
         let department_delete = department.into_active_model().save(conn).await;
         if department_delete.is_err() {
             tracing::error!(

@@ -12,7 +12,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DatabaseTransaction,
-    EntityTrait, IntoActiveModel, QueryFilter, Set,
+    EntityTrait, IntoActiveModel, NotSet, QueryFilter, Set,
 };
 use std::cell::RefCell;
 use std::fmt::Debug;
@@ -29,7 +29,7 @@ impl ReadRepository<UserEntity> for UserEntity {
         DB: ConnectionTrait + Debug,
     {
         match UserEntity::find_by_id(id).one(conn).await {
-            Ok(result) => Some(result?),
+            Ok(result) => Some(result.unwrap()),
             Err(err) => {
                 tracing::error!("Something happen when query database: {err:#?}");
                 None
@@ -50,17 +50,17 @@ impl ReadRepository<UserEntity> for UserEntity {
         }
     }
 
-    async fn find_all<DB>(conn: &DB) -> Option<Vec<UserModel>>
+    async fn find_all<DB>(conn: &DB, query_params: PageQueryParam) -> Option<Vec<UserModel>>
     where
         DB: ConnectionTrait + Debug,
     {
-        match UserEntity::find().all(conn).await {
-            Ok(results) => Some(results),
-            Err(err) => {
-                tracing::error!("Something happen when query database: {err:#?}");
-                None
-            },
-        }
+        let users =
+            sort_and_paginate(conn, &mut UserEntity::find(), query_params, EModule::User).await;
+        if users.is_err() {
+            tracing::error!("Something happen when query database: {:#?}.", users.unwrap_err());
+            return None;
+        };
+        Some(users.unwrap_or_default())
     }
 
     async fn find_data_by_name<DB>(_conn: &DB, _name: &str) -> Option<UserModel>
@@ -74,8 +74,10 @@ impl ReadRepository<UserEntity> for UserEntity {
 #[async_trait]
 impl<'a> WriteRepository<UserEntity> for UserEntity {
     async fn create(conn: &DatabaseTransaction, model: &UserModel) -> Option<i64> {
-        match UserEntity::insert(model.clone().into_active_model()).exec(conn).await {
-            Ok(result) => Some(result.last_insert_id),
+        let mut active_model = model.clone().into_active_model();
+        active_model.id = NotSet;
+        match UserEntity::insert(active_model).exec(conn).await {
+            Ok(result) => Some(result.last_insert_id as i64),
             Err(err) => {
                 tracing::error!("Something happen when query database: {err:#?}");
                 None

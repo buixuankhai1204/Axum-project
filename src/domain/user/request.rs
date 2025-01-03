@@ -19,7 +19,7 @@ pub struct AdminCreateAccountRequest {
     pub language: Option<String>,
     #[validate(range(min = 0, max = 1))]
     pub status: Option<i16>,
-    pub role_id: Uuid,
+    pub role_uuid: Uuid,
     pub is_create_new_employee: bool,
 }
 
@@ -34,7 +34,7 @@ impl AdminCreateAccountRequest {
         address: Option<String>,
         language: Option<String>,
         status: Option<i16>,
-        role_id: Uuid,
+        role_uuid: Uuid,
         is_create_new_employee: bool,
     ) -> Self {
         Self {
@@ -47,7 +47,7 @@ impl AdminCreateAccountRequest {
             address,
             language,
             status,
-            role_id,
+            role_uuid,
             is_create_new_employee,
         }
     }

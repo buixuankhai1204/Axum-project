@@ -1,9 +1,10 @@
 use crate::core::error::{AppError, AppResult};
 use crate::domain::{employee, user};
 use crate::infrastructure::migrations::SimpleExpr;
+use futures::AsyncReadExt;
 use sea_orm::{
-    entity, ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult, PaginatorTrait,
-    QueryFilter, QueryOrder, Select,
+    entity, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, FromQueryResult,
+    PaginatorTrait, QueryFilter, QueryOrder, Select,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -24,8 +25,8 @@ pub struct PageQueryParam {
     pub page_size: u64,
     pub sort_by: Option<String>,
     pub sort_direction: Option<Direction>,
-    #[param(allow_reserved, example = json!("column:eq:value"))]
-    pub filter: String,
+    #[param(allow_reserved, example = json!("column:eq:value,column:eq:value"))]
+    pub filter: Option<String>,
 }
 
 enum Either<A, B> {
@@ -42,6 +43,7 @@ pub fn get_simple_expression(query_string: &str, module_name: EModule) -> Option
     let column: Either<user::Column, employee::Column> = match module_name {
         EModule::User => match parts[0] {
             "email" => Either::UserColumn(user::Column::Email),
+            "full_name" => Either::UserColumn(user::Column::FullName),
             "id" => Either::UserColumn(user::Column::Id),
             _ => return None,
         },
@@ -49,6 +51,7 @@ pub fn get_simple_expression(query_string: &str, module_name: EModule) -> Option
             "userId" => Either::EmployeeColumn(employee::Column::UserId),
             _ => return None,
         },
+
         _ => return None,
     };
 
@@ -62,7 +65,7 @@ pub fn get_simple_expression(query_string: &str, module_name: EModule) -> Option
             "gt" => Some(user.gt(parts[2].parse::<i32>().unwrap())),
             "contains" => Some(user.contains(parts[2])),
             "null" => Some(user.if_null(parts[2])),
-            _ => return None,
+            _ => None,
         },
         Either::EmployeeColumn(employee) => Some(employee.eq(parts[2])),
         _ => None,
@@ -73,10 +76,13 @@ pub fn get_simple_expression(query_string: &str, module_name: EModule) -> Option
 pub enum EModule {
     User,
     Employee,
+    Department,
+    Position,
+    Organization,
 }
 
-pub async fn sort_and_paginate<E, M>(
-    conn: &DatabaseConnection,
+pub async fn sort_and_paginate<E, M, DB>(
+    conn: &DB,
     select: &mut Select<E>,
     param: PageQueryParam,
     module_name: EModule,
@@ -84,21 +90,24 @@ pub async fn sort_and_paginate<E, M>(
 where
     E: EntityTrait<Model = M>,
     M: FromQueryResult + Sized + Send + Sync,
+    DB: ConnectionTrait,
 {
-    let filters = param.filter.split(',').collect::<Vec<_>>();
     let mut select_clone_object = select.clone();
-    for item in filters {
-        let columns = get_simple_expression(item, module_name);
-        let columns_data = match columns {
-            None => {
-                return Err(AppError::BadRequestError(
-                    "query string not correct format".to_string(),
-                ));
-            },
-            Some(value) => value,
-        };
+    if let Some(filter) = param.filter {
+        let filters = filter.split(',').collect::<Vec<_>>();
+        for item in filters {
+            let columns = get_simple_expression(item, module_name);
+            let columns_data = match columns {
+                None => {
+                    return Err(AppError::BadRequestError(
+                        "query string not correct format".to_string(),
+                    ));
+                },
+                Some(value) => value,
+            };
 
-        select_clone_object = select_clone_object.filter(columns_data);
+            select_clone_object = select_clone_object.filter(columns_data);
+        }
     }
 
     select_clone_object = match param.sort_direction {
